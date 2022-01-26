@@ -1,0 +1,98 @@
+Garbuz Catalin 323CD 
+
+Am inceput implementarea temei, pornind de la implementarea laboratorului
+10, HTTP. 
+In main, dupa ce deschid conexiunea cu serverul pe portul 8080 si salvez
+descriptorul socket-ului in sockfd, mi-am declarat un ciclu while(1), 
+unde urmeaza sa realizez toata functionalitatea clientului. Pentru fiecare 
+comanda, descrisa in enuntul temei, mi-am realizat cate o functie care sa
+imi genereze cererea HTTP si sa printeze un text corespunzator raspunsului
+serverului. In acest ciclu while(1), citesc comenzi in variabila input, 
+dupa care, folosind functia strcmp(), verific daca textul introdus la
+tastatura, corespunde cu vreo comanda din tema, daca da, apelez functia 
+corespunzatoare comenzii cu parametrii necesari si realizez comunicarea 
+cu serverul si printarea raspunsurilor la output.
+
+register_querry(int sockfd):
+Functia data ofera prompt pentru username si parola, realizand totodata
+si transformarea acestora intr-un payload de tip json. Dupa ce am 
+obtinut payload-ul, salvez in string-ul message cererea de tip POST,
+apeland functia compute_postj_request cu parametrii necesari.
+Odata ce am obtinut cererea, trimit mesajul la server, apeland functia
+send_to_server (din laboratorul 10) cu socket-ul primit ca parametru
+si cererea generata. Primesc mesajul de la server folosind functia 
+receive_from_server cu acelasi sockfd ca parametru. Dupa aceasta, imi
+creez o copie a raspunsului de la server, in variabila initiala extrag
+antetul raspunsului de forma "HTTP/1.1 COD"pentru a verifica si a afisa
+la output daca comanda a fost indeplinita corect sau daca am primit vreo
+eroare, caz in care afisez payload-ul json al raspunsului serverului.
+
+login_querry(int sockfd):
+La fel ca functia register_querry, aceasta functie ofera mai intai prompt,
+pentru username si parola, generand payload-ul json, dupa care genereaza 
+o cerere POST la url-ul specificat in enunt. In continuare se parcurg pasii
+descrisi la functia register_querry, se trimite cererea, se primeste raspuns,
+se printeaza la output cookie-ul sau eroarea intampinata.
+Daca s-a primit un raspuns cu codul 200, inseamna ca am primit un cookie
+de sesiune de la server, apeland functia getCookie() cu textul intreg al
+raspunsului de la server, extrag cookie-ul si la sfarsitul functiei il 
+returnez pentru a putea fi utilizat la comenzile urmatoare.
+
+enter_library(int sockfd, char* sCookie):
+Functia data primeste ca parametru descriptorul socket-ului si un cookie de
+sesiune pe care l-am salvat dupa comanda login. Salvez intr-un char** 
+acest cookie pentru a putea fi trimis functiei compute_get_request.
+Salvez in string-ul message, cererea GET catre url-ul specificat in 
+enunt, cu cookie-ul primit ca parametru care demonstreaza ca suntem 
+autentificati. Trimit mesajul, primesc un raspuns de la server si printez
+la output payload-ul cu token-ul JWT, daca serverul intoarce un raspuns
+cu codul 200, sau eroarea corespunzatoare. Daca serverul intoarce un
+payload cu token JWT, extrag acest token apeland functia 
+extractJWT(), avand ca parametru payload-ul raspunsului. La final intorc
+token-ul JWT pentru a putea fi utilizat la urmatoarele comenzi.
+
+getBooks(char* jwt, char* sCookie, int sockfd): 
+Pentru a putea utiliza aceeasi functie, compute_get_request, salvez
+in cookie, header-ul "Authorization:", cu token-ul JWT, pentru a
+demonstra ca avem acces la biblioteca, si cookie-ul
+de sesiune, dupa care generez cererea GET, apeland functia 
+compute_get_request cu paramatrii necesari. Pasii urmatori sunt aceeasi
+ca la functiile descrise mai sus.
+
+getBook(char* jwt, char* sCookie, int sockfd):
+Lucrurile care difera fata de functia getBooks, sunt oferirea promptului
+pentru id, crearea url-ului cu id-ul specificat si payload-ul afisat 
+la output in caz de succes al comenzii.
+
+addBook(char* jwt, char* sCookie, int sockfd):
+Ofer prompt pentru title, author, genre, publisher, page_count, exact cum
+este specificat in tema. In aceeasi functie in care citesc datele cartii ce 
+urmeaza sa fie adaugate, generez si payload-ul json al acesteia apeland,
+book_serialization() cu campurile citite. In continuare generez o cerere
+POST, la url-ul specificat in enunt, si cu campurile necesare, dupa care 
+trimit cererea la server, primesc un raspun si afisez mesajul in caz de 
+succes si in caz de eroare.
+
+deleteBook(char* jwt, char* sCookie, int sockfd):
+Ofer prompt pentru id, dupa care generez url dupa formatul specificat in
+enunt. Generez o cerere DELETE, o trimit la server, primesc raspuns, 
+afisez mesaj in caz de succes si in caz de eroare.
+
+logout(char* sCookie, int sockfd):
+Generez o cerere GET, la url-ul specificat in enunt. In cererea GET, 
+salvez si cookie-ul de sesiune pentru a demonstra ca suntem autentificati,
+dupa care trimit cererea, primesc un raspun si afisez mesaj in caz
+de succes si payload-ul raspunsului in caz de eroare.
+
+In main dupa comanda logout, zerografiez cookie-ul de sesiune precedent, 
+folosind functia memset(). Cand primesc comanda exit, dau break pentru
+a iesi din ciclu si inchid conexiunea cu serverul.
+
+Biblioteca parson:
+
+In implementarea mea am utilizat biblioteca "parson", si am folosit-o in
+general pentru generarea payload-urilor de tip json. Am folosit 
+aceasta biblioteca in functiile JSON_serialization si book_serialization.
+Ca sursa de inspiratie pentru generarea payload-urilor, am utilizat 
+exemplul de serializare de pe repository-ul de GitHub a bibliotecii. 
+
