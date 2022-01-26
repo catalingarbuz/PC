@@ -1,0 +1,49 @@
+Garbuz Catalin 323 CD 
+
+Protocolul ARP:
+
+Am implementat protocolul arp, urmarind instructiile din continutul temei si 
+informatiile din referinte. Protocolul ARP este declarat in functia cu antetul
+void arp_protocol(packet m). Aceasta primeste un pachet din care extrag 
+headerul ether_header si arp_header. Daca pachetul contine un arp_header,
+atunci in primul rand verific daca acest pachet este de tipul ARPOP_REQUEST si
+campul "tpa" a acestuia (care indica ip-ul target) coincide cu ip-ul 
+router-ului. Daca se respecta aceste doua conditii, actualizez ether_header-ul
+si, folosind functia send_arp trimit un pachet ARP Reply cu mac-ul 
+corespunzator interfetei pe care a venit pachetul.
+  In cazul cand primesc un ARP Reply, actualizez tabela arp, si apelez functia
+send_packets care primeste ca parametru o coada in care am salvat pachetele 
+pentru care nu s-au gasit intrari in tabela ARP si trimite aceste pachete.
+
+Procesul de dirijare:
+In functia main, inainte de a intra in ciclul while, citesc tabela de rutare
+primita ca argument de executabil si initializez coada in care vom salva 
+pachetele pentru care nu avem intrari in tabela arp. In continuare, in 
+ciclul While, dupa ce primesc un pachet incep sa trec prin etapele de dirijare
+a acestuia, descrise in enuntul temei. Salvez headere-le ip si icmp a 
+pachetului. Incep sa parcurg pasii din enunt. Pentru inceput apelez functia
+arp_protocol care realizeaza pasii explicati la protocolul ARP. In continuare
+salvez in best_route cea mai buna cale pentru ip-ul destinatie din ip_hdr. 
+Daca nu gasim o cale in tabela de rutare aruncam pachetul. Verific daca exista
+o intrare in tabela arp pentru next_hop-ul identificat la pasul anterior. Daca
+exista apelez functia send_one_packet care primeste pachetul si il trimite la
+next_hop, altfel salvez in coada o copie a pachetului, dupa care apelez functia
+arp_send care trimite un pachet arp request cu destinatia broadcast (adica la
+toate hosturile din retea). Cand vom primi un arp reply pachetele din coada vor
+fi trimise la destinatiile necesare.
+
+send_one_packet():
+send_one_packet() este functia care imi trimite un singur pachet la next_hopul
+identificat corect. Aici din nou trec prin pasii descrisi in enuntul temei.
+Verific ttl-ul pachetului. Daca e <= 1 trimit un icmp error cu tipul 
+ICMP_TIME_EXCEEDED. la destinatia pachetului si arunc pachetul. In continuare
+verific checksum-ul cu functia oferita in schelet. Daca checksum-ul calculat
+nu coincide cu checksum-ul initial a pachetului arunc pachetul. Decrementez 
+ttl-ul si actualizez checksum-ul. Daca dupa decrementare ttl-ul pachetului
+devine mai <= 1 trimit un icmp_error corespunzator si arunc pachetul. Urmatorii
+pasi sunt identificarea celei cai bune cai in tabela de rutare catre 
+ip_hdr->daddr, si identificarea intrarii pentru next_hop-ul acestei cai in 
+arp_table. Actualizez campurile ether_dhost si ether_shost ale headerului
+ether cu adresele mac corespunzatoare. Folosind functia send_packet trimit
+pachetul si verific daca nu am primit o eroare la trimiterea pachetului.
+ 
